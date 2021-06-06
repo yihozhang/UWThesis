@@ -1,0 +1,29 @@
+\chapter{Implementation}
+
+We implemented our relational \ematching algorithms for the \egg equality saturation framework. In this section, we describe several implementation details. 
+
+\section{Overview}
+Given an \ematching pattern, we first transform it to a conjunctive query using the algorithm described in Section \ref{sec:pattern_to_cq}. Next, we lower the conjunctive query to an execution plan, represented as a sequence of variables that the generic join will go through. The execution plan is reconstructed for every new \egraph, because the query compiler may depend on the statistics of the \egraph to generate the execution plan. We then build the indices for each atom $R(v_1,\ldots,v_k)$ in the Cconjunctive queryaccording to the variable ordering. Finally, we use an efficient interpreter to run the generic join algorithm.
+
+\section{Variable Ordering}
+
+Different variable ordering may result in asymptotically different performance \citep{eval-wcoj, emptyheaded}. 
+Therefore, choosing an variable ordering is important. 
+Compared to join plans for binary joins, there is few literature on query plans for generic joins.
+Therefore, we developed two heuristics based on empirical experiment. 
+First, we prioritize variables that are associated to more relations, because the intersected set of more relations are more likely to have a smaller cardinality. 
+Moreover, we prioritize variables that are attached to small relations. 
+By intersecting on these variables first, generic join could use the smaller relations to early prune a large portion of atoms in other relations that is not satisfying. 
+
+Using these two constraints, the optimizer is able to find superior query plans than the top-down search of backtracking-based \ematching even for linear patterns, where our relational \ematching does not have more information than \ematching. 
+For example, for queries like $x+\alpha$, our optimizer is able to exploit the fact that there is only one atom in the $R_x$ (i.e., the relation representing constant $x$), so enumerating this relation and use attributes of $R_x$ to prune $R_+$ will immediately produces all valid substitutions. Meanwhile, in the top-down fashion of backtracking-based \ematching, the matching procedure will need to go through all atoms of $R_+$ and check if constant $x$ resides in their second child. Such query plan examines much more unnecessary atoms in $R_+$, because only a small number of $+$-application \enodes are connected to $x$.
+
+\section{Indexing}
+
+The generic join assumes that indices are built for the given variable ordering. However, they are crucial to the actual performance of generic join \citep{eval-wcoj}.
+We currently use a recursive trie structure for indexing. The trie is a hash map from the \eclass ids to itself. An atom is represented as a path from the root in the trie, according to the order of visiting. The indices are built on demand and shared among different \ematching pattern search on the same \egraph. For most non-trivial \ematching queries, the index building time is neglectable.
+We believe there are still space for improvement surrounding indices, such as optimizing the set intersection operations and using a more cache-friendly representation.
+
+\section{Other optimizations}
+
+Finally, we write specialized implementations for various numbers of relations being intersected at each nested layer of generic join. This makes possible unrolling most of the loops when manipulating multiple relations together. Moreover, during index building, if the residual relation is known not to join with any other relations, we switch from trie to a flattened vector that directly stores the relation, which is more cache friendly and avoid backtracking during enumeration of the residual relation. In our experiment on handwritten queries, this optimization enables up to $4\times$ performance gain even on simple queries.

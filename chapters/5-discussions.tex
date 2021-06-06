@@ -1,0 +1,25 @@
+\chapter{Discussion}
+
+\section{Complexity and optimality}
+\label{sec:disc:complexity}
+
+Generic join guarantees worst-case optimality with respect to the output size.
+Our relational \ematching preserves this optimality. In particular, we have the following theorem:
+\newtheorem{theorem}{Theorem}
+\begin{theorem}
+Relational \ematching is worst-case optimal; that is, fix a pattern $p$, let $M(p,E)$ be the set of substitutions yielded by \ematching on an \egraph $E$ with $n$ nodes, relational \ematching runs in time $\tilde O(\max_E(|M(p,E)|))$.
+\end{theorem}
+\begin{proof}
+
+Notice that there is an one-to-one correspondence between an output atoms of the generated conjunctive query and the \ematching. Therefore, the worst-case bound is the same across an \ematching pattern and the conjunctive query it generated. Because generic join is worst-case optimal, relational \ematching also runs in worst-case optimal time with respect to the output size.
+\end{proof}
+
+
+\section{Other join algorithms}
+
+Although we choose generic join algorithm in relational \ematching, there are also other choices in the design space. For example, traditional two-way join plans are efficient on acyclic queries, and extensive research has been done on synthesizing highly efficient query plans. Moreover, Yannakakis' algorithm \citep{yannakakis} is an optimal algorithm on ayclic queries, running in time equal to the size of the output (with possible log factors). However, both of the queries suffer on cyclic conjunctive queries. Two-way join plans spend time enumerating unsatisfying terms, while Yannakakis' algorithm are not applicable to cyclic conjunctive queries. It is possible to choose different join algorithms based on the cyclicity of the query to take advantages each algorithms. However, we currently does not implement this.
+
+\section{Comparison to graph pattern matching}
+
+The idea of representing graph data structure as relational databases are not new. For example, many Datalog programs represent nodes and edges as their own relations to use relational joins to support efficient queries on graph database, known as graph pattern matching. Compared to the common encoding of graphs, our relational representation of \egraphs in a relational database is slightly different and specialized for \egraphs. It is a future work to absorb researches on graph pattern matching for relational \ematching.
+

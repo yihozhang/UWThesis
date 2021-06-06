@@ -1,0 +1,80 @@
+\chapter{Relational E-matching}
+
+
+\begin{figure}
+    \centering
+    % \caption{The main algorithm}\label{alg:main}
+    \begin{algorithmic}[1]
+    \Procedure{RelationalEMatching}{$E,\textit{ps}$}
+    \State $\textit{I}\gets \textsc{EgraphToDatabase}(E)$
+    \State \Return $\{\textsc{Runconjunctive query}(q, I)\ |\textbf{ for } p\in \textit{ps}, q\gets \textsc{PatternToCQs}(p)\}$
+    \EndProcedure
+    \end{algorithmic}
+    \caption{The relational \ematching algorithm}
+    \label{fig:main}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \begin{align*}
+        \textsc{EgraphToDatabase}(E) &= \{\textsc{EnodeToAtom}(n)\ |\text{ for \enode\ } n\in E\}\\
+        \textsc{EnodeToAtom}(f(c_1,\ldots,c_n)) &= R_f(\textit{lookup}(f(c_1,\ldots,c_n)), c_1,\ldots, c_n)
+    \end{align*}
+    \caption{Transforming \egraphs to relational database}
+    \label{fig:egraph_to_db}
+\end{figure}
+
+\def\aux{\textsc{Aux}}
+\def\compile{\textsc{Compile}}
+\begin{figure}
+\begin{align*}
+  \compile(p) &= Q(\textit{root}, v_1,\ldots,v_n) \leftarrow A\\
+  &\quad \begin{aligned}
+  \text{ {where} $v_1\dots v_n$ are variables in $p$}\\
+  \text{{ and} $\aux(p)=\textit{root}\sim A$}\\
+  \end{aligned}\\
+  \aux(f(p_1,\ldots, p_n)) &= v \sim R_f(v, v_1, \ldots, v_n), A_1, \ldots, A_n \\
+  & \text{\quad { where} $v$ is fresh and }\aux(p_i) = v_i \sim A_i \\
+  \aux(x) &= x \sim \emptyset \text{\qquad { where} $x$ is a pattern variable}\\
+\end{align*}
+\caption{Compiling a pattern to a conjunctive query.}\label{alg:compile}
+\end{figure}
+In this chapter, we introduce our relational \ematching algorithm, shown in \autoref{fig:main}. 
+The algorithm takes an e-graph $E$ and a set of patterns $\textit{ps}$. 
+It first transforms the \egraph to its relational representation, denoted as $I$. 
+Next, for each pattern, it compiles the pattern to a conjunctive query $q$, and executes this conjunctive query over $I$. 
+This is particularly suited for scenarios like equality saturation. 
+In such scenarios, the program optimizer switches between e-matching and batched rewrite applications in each iteration to amortize the run-time required for maintaining the congruence invariant, a technique known as ``rebuilding'' \citep{egg}. 
+In such scenarios, the run time for materializing the \egraph can be neglected compared to the \ematching workload.
+In other scenarios, where the \egraph is frequently updated and \ematching is performed interactively, it is possible to use a totally relational representation to avoid the cost of frequent materialization of the relational database and use standard update operations from a SQL-like language\footnote{We actually implemented a prototype \egraph purely on top of an in-memory relational database that does not use graph data structure nor union-finds.}.
+However, we suspect this would incur a larger constant factor to the run time compared to the graph representation of \egraph.
+In general, we left the problem of interactive \ematching, where \ematching is performed on a frequently updated \egraph, as future work (See Chapter~\ref{sec:future}).
+
+\section{Reducing e-graphs to relations}
+
+The first step of relational e-matching is to transform the \egraph to a relational database. 
+An \egraph $E$ representing a congruence relation over $T(\Sigma,\emptyset)$ will be mapped to a relational database over \id, the set of \eclass ids. 
+For every $n$-ary symbol $f$ in $\Sigma$, We map it to an $n+1$-ary symbol $R_f$ in schema $S_\id$.
+We refer to fields of $R_f$ as $\eclassid,\child_1,\ldots,\child_n$ respectively, and they denote the \eclass this \enode belongs to and the children \eclasses of this \enode respectively.
+For every \enode in the \egraph, we map it to an atom in the relational database.
+The algorithm is presented in \autoref{fig:egraph_to_db}. 
+
+Take the \egraph in \autoref{fig:egraph} for example. There are 8 \eclasses in total. The $g$-application \enode in \eclass $c_1$ translates to atom $R_g(1, 2)$, where $1$ is the id of the \eclass that contains it and $2$ is the id of its child \eclass. Similarly, the $f$-application \enode in \eclass $c_2$ translates to the atom $R_f(2, 4, 4)$, where $2$ is the id of the \eclass that contains it and $4,4$ are the ids of its child \eclasses. \autoref{fig:egraph_to_db} only shows the relation representing $f$ and $g$. The relations representing constants $a,b,c$, which are all relations with $\leq 1$ atom, are omitted for brevity.
+
+\section{Reducing \ematching patterns to conjunctive queries}
+\label{sec:pattern_to_cq}
+
+We reduce every \ematching to a conjunctive query so that it can be run on the relational representation of \egraphs. 
+We use the algorithm in \autoref{alg:compile} to ``unnest'' a pattern to a conjunctive query. The \aux{} function returns a variable and a conjunctive query atom list. 
+Particularly, for non-variable pattern $f(p_1,\ldots p_n)$, \aux{} produces a fresh variable $v$ and a concatenation of $R_f(v, v_1,\ldots, v_n)$ and atoms from $A_i$, where $v_i\sim A_i$ is the result of calling $\aux(p_i)$. For variable pattern $x$, \aux{} simply returns $x$ and an empty list.
+Given a pattern $p$, the \compile{} function returns a conjunctive query with body atoms from $\aux(p)$ and the head atom consisting of the root variable and variables in $p$. The compiled conjunctive query and the original \ematching query are equivalent because there is an one-to-one correspondence between the output of them. Specifically, each output atom of the form $Q(c_\textit{root}, c_{x_1},\ldots c_{x_k})$ denotes an \ematching output $\left(c_\textit{root}, \{x_1\mapsto c_{x_1},\ldots,x_k\mapsto c_{x_k} \}\right)$.
+
+With this algorithm, the example pattern $f(\alpha, g(\alpha))$
+ is compiled to the following conjunctive query $$Q(\textit{root},\alpha)\,\textit{:-}\,R_f(\textit{root},\alpha,x),R_g(x,\alpha).$$
+Compared to the original \ematching pattern, this flattened representation enables the pattern search to utilize both the structural and the equality constraints. For example, most of the database optimizers will synthesize query plans that build and lookup indices on both join variables (i.e., $x$ and $\alpha$), which runs in linear time. In contrast,  backtracking-based \ematching takes quadratic time. Backtracking-based \ematching can be seen as a hash join that only builds and look-ups a single variable (i.e., $x$), and filter the outputs using the equality predicates on $\alpha$. In other words, existing \ematching algorithms will consider all $f(\alpha, g(\beta))$ regardless whether $\alpha$ is congruent to $\beta$, while the generated conjunctive query gives the query optimizer the freedom to synthesize query plans that will consider only atoms where $\alpha\cong\beta$.
+
+\section{Answering conjunctive queries with generic join}
+
+Finally, we consider the problem of efficiently solving the compiled conjunctive queries. We propose to use the generic join algorithm to solve the generated conjunctive queries.
+Although traditional query plans, which are based on two way joins such as hash join algorithm and merge-sort join algorithm, are extensively used in industrial relational database engine, they may suffer from certain conjunctive queries \ematching generates. For example, consider the pattern $f(g(\alpha),g(\alpha))$. The synthesized conjunctive query is $$Q(\alpha)\textit{ :- }R_f(\textit{root}, x, y), R_g(x, \alpha), R_g(y, \alpha),$$ which is a cyclic conjunctive query. Two-way join plans suffer on these cyclic queries because they are unable to leverage all the constraints in the conjunctive query to prune the space during enumeration. Consequently, two-way join plans will enumerate terms that do not satisfy the constraint and prune them away \textit{a posteriori}. Moreover, generic joins has comparable performance on acyclic queries with two-way join plans.
+These properties make generic join our ideal solver for conjunctive queries generated from \ematching patterns.

@@ -17,7 +17,7 @@
 %
 % University of Washington Thesis class
 % by Jim Fox
-% fox@washington.edu
+% fox@washington.eduf
 %
 %    For the most recent edition of this class file see:
 %         https://staff.washington.edu/fox/tex/
@@ -142,7 +142,7 @@
 \if@natbib
   \usepackage{natbib}
 \fi
-
+\usepackage[normalem]{ulem}
 %
 % ---- page sizes ----------------------------------------------
 %
@@ -635,7 +635,7 @@
 \def\School#1{\gdef\@School{#1}} \School{University of Washington}
 \def\GSchool#1{\gdef\@GSchool{#1}} \GSchool{Graduate School}
 \def\Degreetext#1{\gdef\@Degreetext{#1}} 
-  \Degreetext{A dissertation\\ submitted in partial fulfillment of the\\requirements for the degree of}
+  \Degreetext{A senior thesis submitted in partial fulfillment of\\ the requirements for the degree of}
 \def\Programtext#1{\gdef\@Programtext{#1}}  
        \Programtext{Program Authorized to Offer Degree: }
 
@@ -681,36 +681,35 @@
       \lineskip 3ex
       \@Title\par}
       \par\vskip\z@ plus4fill\relax
-      \@Author
+      {\large \bf \@Author}\\
+      {Supervised by Professor Zachary Tatlock}
       \par\vskip\z@ plus4fill\relax
       \@Degreetext
       \par\vskip\z@ plus2fill\relax
-      \@Degree
+      {\large \@Degree}
       \par\vskip\z@ plus2fill\relax
+      \@Program\\
       \@School
       \par\vskip\z@ plus1fill\relax
       \@Year
       \par\vskip\z@ plus4fill\relax
 
       % signers
-      \@textofCommittee \par 
-      \count1=0
-      \@whilenum \count1<\@Chair \do
-       {\vskip12\p@ \baselineskip12pt
-        \csname C:\the\count1\endcsname, Chair
-        \advance\count1 by1}
-      \count1=0
-      \@whilenum \count1<\@Sign \do
-       {\vskip12\p@ \baselineskip12pt
-        \csname S:\the\count1\endcsname
-        \advance\count1 by1}
-
-      \par\vskip\z@ plus4fill\relax
-      \@Programtext
-      \par\vskip\z@ plus1fill\relax
-      \@Program\par
-      \par\vskip\z@ plus1fill\relax
+    %   \@textofCommittee \par 
+    %   \count1=0
+    %   \@whilenum \count1<\@Chair \do
+    %   {\vskip12\p@ \baselineskip12pt
+    %     \csname C:\the\count1\endcsname, Chair
+    %     \advance\count1 by1}
+    %   \count1=0
+    %   \@whilenum \count1<\@Sign \do
+    %   {\vskip12\p@ \baselineskip12pt
+    %     \csname S:\the\count1\endcsname
+    %     \advance\count1 by1}
     \end{center}
+  Presentation of work given on \rule{8cm}{0.15mm}\\ \\
+  Thesis and presentation approved by \rule{8cm}{0.15mm}\\ \\
+  Date \rule{8cm}{0.15mm} \\ \\
      \vspace{2pc}\relax
   \let\titlepage\relax}
  
@@ -725,24 +724,7 @@
 \long\def\abstract#1{
    \cleardoublepage
    \begin{center}
-      \@School
-      \par\vskip1pc
       {\bf\@textofAbstract}%
-      \par\vskip1pc
-      {\uwsinglespace \@Title \par}
-      \par\vskip1pc
-      \@Author
-      \par\vskip1pc
-       {\uwsinglespace
-      \@textofChair
-      \par 
-      \count1=0
-      \@whilenum \count1<\@Chair \do
-       {% \vskip12\p@ \baselineskip12pt
-        \csname T:\the\count1\endcsname\ \csname C:\the\count1\endcsname
-        \par \csname D:\the\count1\endcsname\par\vskip6\p@
-        \advance\count1 by1}
-       \par}
       \par\vskip1pc
    \end{center}
 %  if you need single sided abstract pages uncomment this section and the next

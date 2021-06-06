@@ -1,0 +1,51 @@
+
+\chapter {Introduction}
+
+The \egraph data structure has been the focus of programming language and verification research for a long time. 
+First invented in the 1980s, it is originally designed for automated theorem proving (ATP) and is extensively used in modern theorem provers \citep{eqsatthesis, efficient-ematching, proof-producing,simplify,Z3,CVC4}. 
+During the last decade, \egraphs are also re-purposed for program optimization, known as equality saturation \citep{eqsat, denaili, spores, semsearch,herbie, egg}. 
+At its core, \egraphs generalize the union-find data structure \citep{tarjan}, which efficiently represents equivalence relations, to congruence relations. 
+A congruence relation $\cong$  is an equivalence relation where two terms are also congruent  (i.e., $f(t_1,\ldots,t_k)\cong f(t'_1,\ldots,t'_k)$) if all children of the two terms are pairwise congruent (i.e., $t_i\cong t'_i$). 
+\Egraphs maintains the congruence invariant by maintaining a set of equivalent classes (known as \textit{e-classes}) consisting of a set of nodes (known as \textit{e-nodes}), while every \enode consists of a head function symbol and a list of children e-classes.
+
+\Ematching is a fundamental operation on \egraphs \citep{efficient-ematching, simplify}. 
+It finds the set of terms in an \egraph matching a given pattern. 
+For example, for pattern $f(\alpha, g(\alpha))$\footnote{
+ $\alpha$ is a variable in this pattern. We use $a,b,c$ for constants and $\alpha, \beta, \gamma$ for variables as a convention.
+}, \ematching finds every term whose head symbol is $f$ and whose second argument has a head symbol $g$ and whose first argument to $f$ and first argument to $g$ are the same.
+\Ematching is a central procedure in state-of-the-art SMT solvers, including \textsc{Z3} \citep{Z3} and \textsc{CVC4} \citep{CVC4}. SMT solvers use \ematching to instantiate quantified formulas over ground terms. Moreover, \ematching is also the bottleneck of many equality saturation--based program optimizers \citep{spores,herbie,egg}. In equality saturation, the optimizer uses \ematching to match the left-hand side of the rewrite rules and fires new terms based on the matches, and \ematching usually takes 60--90\% of the overall run time.
+Therefore, in both applications, the performance of e-matching is critical.
+
+Several algorithms are proposed for e-matching \citep{efficient-ematching,simplify}.
+However, to our knowledge, existing e-matching algorithms are based on na\"ive backtracking, which is suboptimal in many cases. 
+In particular, their query planning does not exploit the constraints implied by multi-occurrences of the same variable, which is nonetheless a common pattern in practice.
+To see this, consider the pattern $f(\alpha,g(\alpha))$ again. 
+This pattern generates three constraints for a potential matching \enode $n$: 
+\begin{align}
+    n.\sym&=f \label{eqn:constraint1}\\
+    n.\child_2.\sym&=g \label{eqn:constraint2}\\
+    n.\child_1&=n.\child_2.\child_1 \label{eqn:constraint3}
+\end{align}
+There are two kinds of constraints here. The first kind of constraint is derived from the structure of the pattern. In this example, the structure of $f(\alpha, g(\alpha))$ constrains the head symbol of all (sub)terms to be $f$ and $g$ respectively (i.e., constraint \ref{eqn:constraint1} and \ref{eqn:constraint2}), which we call {\it structural constraints}. The second kind of constraints is implied by the multi-occurrence of the same variable. Here, the occurrence of $\alpha$ implies that the terms at these positions should be equivalent with each other for all matches (i.e., constraint \ref{eqn:constraint1}), which we call {\it equality constraints}. 
+
+To our knowledge, existing backtracking-based algorithms only exploit the structural constraint during query planning and fail to consider equality constraints in general. Therefore, running backtracking-based algorithms on the above pattern, terms violating constraint \ref{eqn:constraint3} are only pruned away \textit{a posteriori} when the partial match containing violating variables are instantiated (See Chapter~\ref{sec:background} for more details). Therefore, excessive terms like $f(a, g(b))$ for $a\not\cong b$ will be enumerated during search and only pruned away before yielding. 
+
+We solve this issue by taking a relational view of \egraphs and \ematching, which we call \textit{relational e-matching}. Under this view, \egraphs correspond to a relational database and \ematching patterns correspond to a restricted class of relational queries, known as {\it conjunctive queries}. One key advantage of this relational view is that the conjunctive query representation provides a unified way to explicitly encode \textit{both} structural constraints and equality constraints, of which the conjunctive query solver could take advantage during query planning. 
+% In particular, the mapped CQ can be classified into three categories: linear acyclic queries, non-linear acyclic queries, and cyclic queries.
+
+One particular kind of conjunctive queries practical \ematching patterns may correspond to is cyclic queries, where query plans based on traditional two-way joins, including hash joins and merge-sort joins, are known to be suboptimal \citep{agm}.
+On cyclic queries, two-way joins cannot leverage all the constraints to prune the search space at once, so candidates that does not satisfy all the constraints will be enumerated.
+Therefore, we take inspirations from the theoretical advances in database theory community and utilize generic join algorithm as the CQ solver. 
+Generic join algorithm is a worst-case optimal algorithm on CQs, and it avoids to enumerate candidates that do not satisfy all the constraints.
+Moreover, it is particularly efficient with complex queries (e.g., cyclic queries). 
+Using generic joins, our \ematching algorithm preserves the guarantees of worst-case optimality. 
+Finally, we instantiate our algorithm in \egg \citep{egg}, a program optimization framework based on equality saturation. We evaluate our implementation using some microbenchmarks, which shows asymptotic speedup and order of magnitude performance gain.
+
+In summary, we made the following contributions:
+\begin{itemize}
+    \item We propose relational e-matching, a worst-case optimal and efficient approach to \ematching by running generic joins on \ematching-translated CQs over the relational representations of \egraphs.
+    \item We instantiate relational e-matching in an efficient implementation integrates to \textsc{egg} and evaluate it on several benchmarks.
+\end{itemize}
+
+% pp-pair is somehow a way to work with equality constraint under incremental setting.
+
