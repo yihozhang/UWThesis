@@ -7,7 +7,7 @@
     \begin{algorithmic}[1]
     \Procedure{RelationalEMatching}{$E,\textit{ps}$}
     \State $\textit{I}\gets \textsc{EgraphToDatabase}(E)$
-    \State \Return $\{\textsc{Runconjunctive query}(q, I)\ |\textbf{ for } p\in \textit{ps}, q\gets \textsc{PatternToCQs}(p)\}$
+    \State \Return $\{\textsc{EvalCQ}(q, I)\ |\textbf{ for } p\in \textit{ps}, q\gets \textsc{PatternToCQs}(p)\}$
     \EndProcedure
     \end{algorithmic}
     \caption{The relational \ematching algorithm}
@@ -75,6 +75,22 @@ Compared to the original \ematching pattern, this flattened representation enabl
 
 \section{Answering conjunctive queries with generic join}
 
-Finally, we consider the problem of efficiently solving the compiled conjunctive queries. We propose to use the generic join algorithm to solve the generated conjunctive queries.
-Although traditional query plans, which are based on two way joins such as hash join algorithm and merge-sort join algorithm, are extensively used in industrial relational database engine, they may suffer from certain conjunctive queries \ematching generates. For example, consider the pattern $f(g(\alpha),g(\alpha))$. The synthesized conjunctive query is $$Q(\alpha)\textit{ :- }R_f(\textit{root}, x, y), R_g(x, \alpha), R_g(y, \alpha),$$ which is a cyclic conjunctive query. Two-way join plans suffer on these cyclic queries because they are unable to leverage all the constraints in the conjunctive query to prune the space during enumeration. Consequently, two-way join plans will enumerate terms that do not satisfy the constraint and prune them away \textit{a posteriori}. Moreover, generic joins has comparable performance on acyclic queries with two-way join plans.
-These properties make generic join our ideal solver for conjunctive queries generated from \ematching patterns.
+
+Finally, we consider the problem of efficiently solving the compiled conjunctive
+queries. We propose to use the generic join algorithm to solve the generated
+conjunctive queries. Although traditional query plans, which are based on two
+way joins such as hash joins and merge-sort joins, are
+extensively used in industrial relational database engine, they may suffer from
+certain conjunctive queries \ematching~generates. For example, consider the
+pattern $f(g(\alpha),g(\alpha))$. The synthesized conjunctive query
+is $$Q(\alpha)\gets R_f(\textit{root}, x, y), R_g(x, \alpha), R_g(y, \alpha),$$
+which is a cyclic conjunctive query. Two-way join plans suffer on these cyclic
+queries because they are unable to leverage all the constraints in the
+conjunctive query to prune the space during enumeration. Consequently, two-way
+join plans will enumerate terms that do not satisfy the constraint and prune
+them away \textit{a posteriori}. In contrast, the generic join algorithm will
+only consider a concrete term when the term satisfies all the constraints.
+Moreover, generic joins has comparable
+performance on acyclic queries with two-way join plans. These properties make
+generic join our ideal solver for conjunctive queries generated from \ematching
+patterns.

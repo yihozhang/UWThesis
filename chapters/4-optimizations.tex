@@ -3,7 +3,7 @@
 We implemented our relational \ematching algorithms for the \egg equality saturation framework. In this section, we describe several implementation details. 
 
 \section{Overview}
-Given an \ematching pattern, we first transform it to a conjunctive query using the algorithm described in Section \ref{sec:pattern_to_cq}. Next, we lower the conjunctive query to an execution plan, represented as a sequence of variables that the generic join will go through. The execution plan is reconstructed for every new \egraph, because the query compiler may depend on the statistics of the \egraph to generate the execution plan. We then build the indices for each atom $R(v_1,\ldots,v_k)$ in the Cconjunctive queryaccording to the variable ordering. Finally, we use an efficient interpreter to run the generic join algorithm.
+Given an \ematching pattern, we first transform it to a conjunctive query using the algorithm described in Section \ref{sec:pattern_to_cq}. Next, we lower the conjunctive query to an execution plan, represented as a sequence of variables that the generic join will go through. The execution plan is reconstructed for every new \egraph, because the query compiler may depend on the statistics of the \egraph to generate the execution plan. We then build the indices for each atom $R(v_1,\ldots,v_k)$ in the conjunctive query according to the variable ordering. Finally, we use an efficient interpreter to run the generic join algorithm.
 
 \section{Variable Ordering}
 
